@@ -36,4 +36,5 @@ type LookupType struct {
 	LongValue       PlainText `xml:",omitempty" json:",omitempty"`
 	ShortValue      PlainText `xml:",omitempty" json:",omitempty"`
 	Value           PlainText `xml:",omitempty" json:",omitempty"`
+	Label           PlainText `xml:",omitempty" json:",omitempty"`
 }
