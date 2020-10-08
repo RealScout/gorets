@@ -66,7 +66,20 @@ func Login(ctx context.Context, requester Requester, r LoginRequest) (*Capabilit
 
 	urls, err := parseCapability(body, r.URL)
 	if err != nil {
-		return nil, errors.New("unable to parse capabilites Response: " + err.Error())
+		// Get a copy of the html body reader separately, since previous stream is closed
+		// so we can dump the html contents
+		bodyCopy := DefaultReEncodeReader(resp.Body, resp.Header.Get(ContentType))
+
+		defer bodyCopy.Close()
+		buf := new(strings.Builder)
+		_, copyErr := io.Copy(buf, bodyCopy)
+
+		// Print entire html response body for easier troubleshooting in our Loggly alerts
+		if copyErr == nil {
+			return nil, errors.New("unable to parse capabilites Response: " + err.Error() + ": " + buf.String())
+		}
+
+		return nil, errors.New("unable to parse capabilities response: " + err.Error())
 	}
 	return urls, nil
 }
