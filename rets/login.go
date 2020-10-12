@@ -63,6 +63,7 @@ func Login(ctx context.Context, requester Requester, r LoginRequest) (*Capabilit
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	body := DefaultReEncodeReader(resp.Body, resp.Header.Get(ContentType))
 
 	// Duplicate stream, so we can re-parse the response body in the case of parseCapability error
