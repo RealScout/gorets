@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -64,15 +65,14 @@ func Login(ctx context.Context, requester Requester, r LoginRequest) (*Capabilit
 	}
 	body := DefaultReEncodeReader(resp.Body, resp.Header.Get(ContentType))
 
+	// Duplicate stream, so we can re-parse the response body in the case of parseCapability error
+	buf := new(strings.Builder)
+	body = ioutil.NopCloser(io.TeeReader(body, buf))
+
 	urls, err := parseCapability(body, r.URL)
 	if err != nil {
-		// Get a copy of the html body reader separately, since previous stream is closed
-		// so we can dump the html contents
-		bodyCopy := DefaultReEncodeReader(resp.Body, resp.Header.Get(ContentType))
-
-		defer bodyCopy.Close()
-		buf := new(strings.Builder)
-		_, copyErr := io.Copy(buf, bodyCopy)
+		// Get a copy of the html body from our duplicated stream
+		_, copyErr := io.Copy(buf, body)
 
 		// Print entire html response body for easier troubleshooting in our Loggly alerts
 		if copyErr == nil {
